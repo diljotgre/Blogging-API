@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from models import Post
-from db_operations import add, init, update, delete, get_all
+from db_operations import add, init, update, delete, get_all, get_specific
 from datetime import datetime
 
 app = Flask(__name__)
@@ -49,11 +49,22 @@ def delete_post(id):
     
 
 @app.get('/getposts')
-def get_all():
+def get_all_posts():
     try:
         
-        get_all()
+        posts, status_code=get_all()
+        return jsonify(posts)
         
+    except Exception as e:
+        return jsonify(str(e)), 500
+
+@app.get('/posts?term=<term>')
+def get_specific_posts(term):
+    try:
+        posts,statuscode = get_specific(term)
+        return jsonify(posts)
+        
+    
     except Exception as e:
         return jsonify(str(e)), 500
    

@@ -3,6 +3,7 @@ import psycopg2
 from psycopg2 import pool 
 from models import Post
 import json
+from pydantic import json
 
 
 params = config()
@@ -28,9 +29,11 @@ def init():
     except(Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
+        if cur is not None:
+            cur.close()
         if connection is not None:
-            connection.close()
-            print('Operation completed')
+            con_pool.putconn(connection)
+            print('database connection terminated')
             
 def add(title, content, category, tags, createdAt, updatedAt):
     
@@ -46,9 +49,11 @@ def add(title, content, category, tags, createdAt, updatedAt):
     except(Exception, psycopg2.Error)  as error:
         print(error)
     finally:
+        if cur is not None:
+            cur.close()
         if connection is not None:
-            connection.close()
-            print("Database connection terminated")                                                                                                                                 
+            con_pool.putconn(connection)
+            print('database connection terminated')                                                                                                                                 
         
 def test():
     try:
@@ -61,8 +66,10 @@ def test():
     except(Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
+        if cur is not None:
+            cur.close()
         if connection is not None:
-            connection.close()
+            con_pool.putconn(connection)
             print('database connection terminated')
 
 
@@ -79,8 +86,10 @@ def update(title, content, category, tags, updatedAt, id):
     except(Exception, psycopg2.DataError) as error:
         print(error)
     finally:
+        if cur is not None:
+            cur.close()
         if connection is not None:
-            connection.close()
+            con_pool.putconn(connection)
             print('database connection terminated')
 
 def delete(id):
@@ -97,14 +106,16 @@ def delete(id):
     except(Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
+        if cur is not None:
+            cur.close()
         if connection is not None:
-            connection.close()
+            con_pool.putconn(connection)
             print('database connection terminated')
 
 
 def get_all():
     try:
-        print('hello')
+        
         connection = con_pool.getconn()
         if connection is None:
             print('failed to get a connection from the pool')
@@ -118,20 +129,56 @@ def get_all():
         posts = []
         
         for post in data:
-            print('loop')
-            post = Post(post[1], post[2], post[3], post[4], post[5], post[6])
-            post = json.dumps(post)
-            posts.append(post)
+            
+            post = Post(title = post[1], content  = post[2], category= post[3], tags =  post[4], createdAt= post[5],updatedAt=  post[6])
+            posts.append(post.model_dump())
+            # print(post.model_dump())
         
-        print(posts)
-                
-        
-
+        return posts, 200
     except(Exception, psycopg2.DatabaseError) as error:
         print(error)
     finally:
+        if cur is not None:
+            cur.close()
         if connection is not None:
-            connection.close()
+            con_pool.putconn(connection)
             print('database connection terminated')
 
-get_all()
+def get_specific(term):
+    try:
+        connection = con_pool.getconn()
+        if connection is None:
+            print('failed to get a connection from the pool')
+        cur = connection.cursor()
+        
+        query = """ SELECT * from blog_posts
+                        WHERE  title = %s
+                            OR  content = %s
+                            OR  category = %s
+                            OR  tags @> ARRAY[%s]
+                            OR  createdAt = %s
+                            OR  updatedAt = %s ; 
+                """
+        data = (term, term, term, term, term, term)
+        cur.execute(query, data)
+        data = cur.fetchall()
+        posts = []
+        for post in data:
+            post = Post(title = post[1], content = post[2], category = post[3], tags = post[4], createdAt = post[5], updatedAt = post[6])
+            posts.append(post.model_dump())
+            
+        return posts, 200
+        
+    except(Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if cur is not None:
+            cur.close()
+        if connection is not None:
+            con_pool.putconn(connection)
+            print('database connection terminated')
+    
+    
+    
+    
+    
