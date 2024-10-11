@@ -42,8 +42,5 @@ Before running the application, ensure you have the following installed on your 
 ```
 flask --app main run --reload 
 ```
-### 3. Create the Database
-- Make sure you create a PostgreSQL database that matches the name you specified in the `database.ini` file. You can do this using the PostgreSQL command line or a GUI tool like pgAdmin.
 
-### 4. Run the flask application 
-```
+
